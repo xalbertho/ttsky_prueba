@@ -1,0 +1,19 @@
+module sumador(
+    input wire clk,
+    input wire rst,        // reset activo en bajo
+    input wire enable,
+    output reg [7:0] out,
+    output reg cout
+);
+
+always @(posedge clk or negedge rst) begin
+    if (!rst) begin
+        out  <= 8'd0;
+        cout <= 1'b0;
+    end 
+    else if (enable) begin
+        {cout, out} <= {cout, out} + 9'd1;   // suma correcta con acarreo
+    end
+end
+
+endmodule
