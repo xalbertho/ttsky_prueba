@@ -10,52 +10,48 @@ module tt_um_sumador (
     output wire [7:0] uo_out,   // Dedicated outputs
     input  wire [7:0] uio_in,   // IOs: Input path
     output wire [7:0] uio_out,  // IOs: Output path
-    output wire [7:0] uio_oe,   // IOs: Enable path (1=output)
-    input  wire       ena,      // always 1 when powered
+    output wire [7:0] uio_oe,   // IOs: Enable path (1 = output)
+    input  wire       ena,      // siempre 1 cuando está habilitado
     input  wire       clk,      // clock
-    input  wire       rst_n     // reset_n - low to reset
+    input  wire       rst_n     // reset_n - bajo para reset
 );
 
-  // ==========================
-  // Señales internas
-  // ==========================
-  wire        enable;
-  wire [7:0]  out;
-  wire        cout;
+    // ============================
+    // Señales internas
+    // ============================
+    wire       enable;
+    wire [7:0] out;
+    wire       cout;
 
-  // ==========================
-  // Asignaciones de IOs
-  // ==========================
+    // Usamos solo el bit 0 de ui_in como enable
+    assign enable = ui_in[0];
 
-  // IOs: solo uio_out[7] es salida, el resto en 0
-  assign uio_out[6:0] = 7'b000_0000; 
-  assign uio_out[7]   = cout;
+    // Conectamos la salida del sumador a los pines dedicados
+    assign uo_out = out;
 
-  // Habilitar solo el bit 7 como salida (1 = output)
-  assign uio_oe       = 8'b1000_0000;
+    // IOs: solo el bit 7 es salida (cout), el resto en 0
+    assign uio_out[6:0] = 7'b000_0000;
+    assign uio_out[7]   = cout;
 
-  // Conectar salida del sumador a los pines dedicados
-  assign uo_out       = out;
+    // uio_oe: 1 = output, 0 = input
+    // Solo el bit 7 es salida, los demás son entradas
+    assign uio_oe = 8'b1000_0000;
 
-  // Usar ui_in[0] como enable (un solo bit)
-  assign enable       = ui_in[0];
+    // ============================
+    // Instancia del sumador
+    // ============================
+    sumador sumador_Unit (
+        .clk   (clk),
+        .rst   (rst_n),   // tu sumador tiene reset activo en bajo
+        .enable(enable),
+        .out   (out),
+        .cout  (cout)
+    );
 
-  // ==========================
-  // Instancia del sumador
-  // ==========================
-  sumador sumador_Unit (
-    .clk    (clk),
-    .rst    (rst_n),   // tu sumador usa reset activo en bajo (if !rst)
-    .enable (enable),
-    .out    (out),
-    .cout   (cout)
-  );
-
-  // ==========================
-  // Marcar entradas no usadas
-  // ==========================
-  // Aquí puedes poner los bits de ui_in que NO usas (7:1)
-  wire _unused = &{ena, ui_in[7:1], uio_in, 1'b0};
+    // ============================
+    // Evitar warnings por señales sin usar
+    // ============================
+    wire _unused = &{ena, uio_in, ui_in[7:1], 1'b0};
 
 endmodule
 
