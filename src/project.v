@@ -5,23 +5,58 @@
 
 `default_nettype none
 
-module tt_um_example (
+module tt_um_sumador (
     input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
     input  wire [7:0] uio_in,   // IOs: Input path
     output wire [7:0] uio_out,  // IOs: Output path
-    output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
-    input  wire       ena,      // always 1 when the design is powered, so you can ignore it
+    output wire [7:0] uio_oe,   // IOs: Enable path (1=output)
+    input  wire       ena,      // always 1 when powered
     input  wire       clk,      // clock
     input  wire       rst_n     // reset_n - low to reset
 );
 
-  // All output pins must be assigned. If not used, assign to 0.
-  assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
-  assign uio_out = 0;
-  assign uio_oe  = 0;
+  // ==========================
+  // Señales internas
+  // ==========================
+  wire        enable;
+  wire [7:0]  out;
+  wire        cout;
 
-  // List all unused inputs to prevent warnings
-  wire _unused = &{ena, clk, rst_n, 1'b0};
+  // ==========================
+  // Asignaciones de IOs
+  // ==========================
+
+  // IOs: solo uio_out[7] es salida, el resto en 0
+  assign uio_out[6:0] = 7'b000_0000; 
+  assign uio_out[7]   = cout;
+
+  // Habilitar solo el bit 7 como salida (1 = output)
+  assign uio_oe       = 8'b1000_0000;
+
+  // Conectar salida del sumador a los pines dedicados
+  assign uo_out       = out;
+
+  // Usar ui_in[0] como enable (un solo bit)
+  assign enable       = ui_in[0];
+
+  // ==========================
+  // Instancia del sumador
+  // ==========================
+  sumador sumador_Unit (
+    .clk    (clk),
+    .rst    (rst_n),   // tu sumador usa reset activo en bajo (if !rst)
+    .enable (enable),
+    .out    (out),
+    .cout   (cout)
+  );
+
+  // ==========================
+  // Marcar entradas no usadas
+  // ==========================
+  // Aquí puedes poner los bits de ui_in que NO usas (7:1)
+  wire _unused = &{ena, ui_in[7:1], uio_in, 1'b0};
 
 endmodule
+
+`default_nettype wire
